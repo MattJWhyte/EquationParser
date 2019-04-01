@@ -59,14 +59,11 @@ class Term:
             return self.__evaluate_sub_eqn(comp, **var)
         elif comp.isalpha():
             if comp in var:
-                return float(var[comp])
+                return Term.__convert_to_float(var[comp])
             else:
                 raise UndefinedVariableError(comp)
         else:
-            try:
-                return float(comp)
-            except ValueError:
-                raise InvalidComponentError
+            Term.__convert_to_float(comp)
 
     def __evaluate_sub_eqn(self, exp, **var):
         index = int(exp[1:])
@@ -75,6 +72,13 @@ class Term:
 
     def __str__(self):
         return "%s - %i" % (self.exp, self.positive)
+
+    @staticmethod
+    def __convert_to_float(string):
+        try:
+            return float(string)
+        except ValueError:
+            raise InvalidComponentError(string)
 
 
 class Equation:
@@ -96,7 +100,6 @@ class Equation:
                 start_index = bracket_indices[-1]
                 bracket_indices.pop()
                 if len(bracket_indices) == 0:
-                    # Get replacement count
                     replacement_count = len(self.sub_equations)
                     replacements.append([replacement_count, exp[start_index:i+1]])
                     self.sub_equations.append(Equation(exp[start_index+1:i]))
@@ -117,7 +120,6 @@ class Equation:
 
         self.terms = []
 
-        # Check first term
         if terms[0][0] == "-":
             self.terms.append(Term(terms[0][1:], False, self.sub_equations))
         else:
@@ -137,15 +139,17 @@ class Equation:
             raise ValueUndefinedError
 
 
+# Raised when user provides a non-float variable
 class InvalidComponentError(Exception):
 
     def __init__(self, component):
-        self.message = "%s cannot be evaluated" % component
+        self.message = "'%s' cannot be evaluated" % component
 
     def __str__(self):
         return str(self.message)
 
 
+# Raised when user does not provide a value for any variables in equation
 class UndefinedVariableError(Exception):
 
     def __init__(self, var):
@@ -155,6 +159,7 @@ class UndefinedVariableError(Exception):
         return str(self.message)
 
 
+# Raised when equation tries to divide by 0
 class ValueUndefinedError(Exception):
 
     def __str__(self):
